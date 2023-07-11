@@ -15,10 +15,10 @@ def load_transformed_dataset():
     ]
     data_transform = transforms.Compose(data_transforms)
 
-    train = torchvision.datasets.Food101(root=".", download=False,
+    train = torchvision.datasets.Food101(root="E:/Diffusion/datasets/", download=False,
                                          transform=data_transform)
 
-    test = torchvision.datasets.Food101(root=".", download=False,
+    test = torchvision.datasets.Food101(root="E:/Diffusion/datasets/", download=False,
                                          transform=data_transform, split='test')
     return torch.utils.data.ConcatDataset([train, test])
 
