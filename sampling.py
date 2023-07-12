@@ -1,5 +1,5 @@
 import torch
-from noise_scheduler import get_index_from_list, linear_beta_schedule
+from noise_scheduler import get_index_from_list
 from data_preprocessing import show_tensor_image
 import matplotlib.pyplot as plt
 import torch.nn.functional as F
@@ -9,12 +9,22 @@ IMG_SIZE = 64
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 @torch.no_grad()
-def sample_timestep(x, t):
+def sample_timestep(x, t, betas):
     """
     Calls the model to predict the noise in the image and returns
     the denoised image.
     Applies noise to this image, if we are not in the last step yet.
     """
+
+    # Pre-calculate different terms for closed form
+    alphas = 1. - betas
+    alphas_cumprod = torch.cumprod(alphas, axis=0)
+    alphas_cumprod_prev = F.pad(alphas_cumprod[:-1], (1, 0), value=1.0)
+    sqrt_recip_alphas = torch.sqrt(1.0 / alphas)
+    sqrt_alphas_cumprod = torch.sqrt(alphas_cumprod)
+    sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - alphas_cumprod)
+    posterior_variance = betas * (1. - alphas_cumprod_prev) / (1. - alphas_cumprod)
+
     betas_t = get_index_from_list(betas, t, x.shape)
     sqrt_one_minus_alphas_cumprod_t = get_index_from_list(
         sqrt_one_minus_alphas_cumprod, t, x.shape
@@ -36,7 +46,7 @@ def sample_timestep(x, t):
         return model_mean + torch.sqrt(posterior_variance_t) * noise
 
 @torch.no_grad()
-def sample_plot_image(image_name):
+def sample_plot_image(image_name, T, betas):
     # Sample noise
     img_size = IMG_SIZE
     img = torch.randn((1, 3, img_size, img_size), device=device)
@@ -47,24 +57,10 @@ def sample_plot_image(image_name):
 
     for i in range(0,T)[::-1]:
         t = torch.full((1,), i, device=device, dtype=torch.long)
-        img = sample_timestep(img, t)
+        img = sample_timestep(img, t, betas)
         # Edit: This is to maintain the natural range of the distribution
         img = torch.clamp(img, -1.0, 1.0)
         if i % stepsize == 0:
             plt.subplot(1, num_images, int(i/stepsize)+1)
             show_tensor_image(img.detach().cpu(), image_name)
-    #plt.show()
-
-
-# Define beta schedule
-T = 300
-betas = linear_beta_schedule(timesteps=T)
-
-# Pre-calculate different terms for closed form
-alphas = 1. - betas
-alphas_cumprod = torch.cumprod(alphas, axis=0)
-alphas_cumprod_prev = F.pad(alphas_cumprod[:-1], (1, 0), value=1.0)
-sqrt_recip_alphas = torch.sqrt(1.0 / alphas)
-sqrt_alphas_cumprod = torch.sqrt(alphas_cumprod)
-sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - alphas_cumprod)
-posterior_variance = betas * (1. - alphas_cumprod_prev) / (1. - alphas_cumprod)
+    plt.close()     # In order to solve RuntimeWarning: More than 20 figures have been opened
