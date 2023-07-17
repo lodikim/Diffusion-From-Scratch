@@ -11,8 +11,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 @torch.no_grad()
 def sample_timestep(x, t, betas):
     """
-    Calls the model to predict the noise in the image and returns
-    the denoised image.
+    Calls the model to predict the noise in the image and returns the denoised image.
     Applies noise to this image, if we are not in the last step yet.
     """
 
@@ -62,4 +61,4 @@ def sample_plot_image(image_name, T, betas):
         if i % stepsize == 0:
             plt.subplot(1, num_images, int(i/stepsize)+1)
             show_tensor_image(img.detach().cpu(), image_name)
-    plt.close()     # In order to solve RuntimeWarning: More than 20 figures have been opened
+    plt.close()     # In order to solve 'RuntimeWarning: More than 20 figures have been opened'

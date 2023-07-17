@@ -16,8 +16,7 @@ def linear_beta_schedule(timesteps, start=0.0001, end=0.02):
 # extracts specific index from a list, considers batch size
 def get_index_from_list(vals, t, x_shape):
     """
-    Returns a specific index t of a passed list of values vals
-    while considering the batch dimension.
+    Returns a specific index t of a passed list of values vals while considering the batch dimension.
     """
     batch_size = t.shape[0]
     out = vals.gather(-1, t.cpu())
@@ -26,8 +25,7 @@ def get_index_from_list(vals, t, x_shape):
 # main function: calculates the noisy version of an image at a time step t
 def forward_diffusion_sample(x_0, t, betas, device="cpu"):
     """
-    Takes an image and a timestep as input and
-    returns the noisy version of it
+    Takes an image and a timestep as input and returns the noisy version of it
     """
 
     # Pre-calculate different terms for closed form
